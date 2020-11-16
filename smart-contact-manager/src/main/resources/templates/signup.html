@@ -1,13 +1,75 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="base::layout(~{::section})">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+	th:replace="base::layout(~{::section})">
 <head>
-	<meta charset="UTF-8" />
-	<title>Home</title>
+<meta charset="UTF-8" />
+<title>Home</title>
 </head>
 <body>
 	<section>
-		<h1>This is SignUp Page</h1>
-		<h2>We are going to write about smart contact manager</h2>
+		<div class="container">
+			<div class="row">
+				<div class="col-md-6 offset-md-3">
+					<div class="my-card mt-2">
+
+						<div th:if="${session.message}"
+							th:classappend="${session.message.type}" class="alert"
+							role="alert">
+							<p th:text="${session.message.content}"></p>
+							<th:block th:text="${#session.removeAttribute('message')}"></th:block>
+						</div>
+
+						<div class="conatiner text-center">
+							<img style="width: 80px" th:src="@{/images/membership.png}"
+								alt="No Image Preview" />
+						</div>
+
+						<h1 class="text-center">Register Here</h1>
+
+						<form th:action="@{/register_form}" method="post"
+							th:object="${user}">
+
+							<div class="form-group">
+								<label>Your Name</label> <input type="text" class="form-control"
+									id="your_name" name="name" th:value="${user.name}"
+									placeholder="Enter Your Name" required />
+							</div>
+
+							<div class="form-group">
+								<label>Your Email</label> <input type="email"
+									class="form-control" id="email" name="email"
+									placeholder="Enter Your Email" th:value="${user.email}"
+									required />
+							</div>
+
+							<div class="form-group">
+								<label>Your Password</label> <input type="password"
+									class="form-control" id="password" name="password"
+									placeholder="Enter Your Password" required />
+							</div>
+
+
+							<div class="form-group">
+								<textarea placeholder="Enter Something about yourself"
+									name="about" id="" rows="10" class="form-control"
+									th:value="${user.about}"></textarea>
+							</div>
+
+							<div class="form-group form-check">
+								<input type="checkbox" name="agreed" class="form-check-input"
+									id="agreed" /> <label>Accept Terms and Conditions</label>
+							</div>
+
+							<div class="container text-center">
+								<button class="btn bg-primary text-white" type="submit">Submit</button>
+								<button class="btn btn-warning text-white" type="reset">Reset</button>
+							</div>
+
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
 	</section>
 </body>
 </html>
