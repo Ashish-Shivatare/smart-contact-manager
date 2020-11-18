@@ -15,7 +15,7 @@
 						<div th:if="${session.message}"
 							th:classappend="${session.message.type}" class="alert"
 							role="alert">
-							<p th:text="${session.message.content}"></p>
+							<p class="text-center" th:text="${session.message.content}"></p>
 							<th:block th:text="${#session.removeAttribute('message')}"></th:block>
 						</div>
 
@@ -26,13 +26,16 @@
 
 						<h1 class="text-center">Register Here</h1>
 
-						<form th:action="@{/register_form}" method="post"
+						<form novalidate th:action="@{/register_form}" method="post"
 							th:object="${user}">
 
 							<div class="form-group">
-								<label>Your Name</label> <input type="text" class="form-control"
+								<label>Your Name</label> <input type="text" th:classappend="${#fields.hasErrors('name') ? 'is-invalid':''}" class="form-control"
 									id="your_name" name="name" th:value="${user.name}"
 									placeholder="Enter Your Name" required />
+
+								<div class="invalid-feedback" th:each="e : ${#fields.errors('name')}" th:text="${e}">
+								</div>
 							</div>
 
 							<div class="form-group">
@@ -52,7 +55,7 @@
 							<div class="form-group">
 								<textarea placeholder="Enter Something about yourself"
 									name="about" id="" rows="10" class="form-control"
-									th:value="${user.about}"></textarea>
+									th:text="${user.about}"></textarea>
 							</div>
 
 							<div class="form-group form-check">
