@@ -20,21 +20,13 @@ public class Contact {
 	private String work;
 	private String email;
 	private String phone;
-	private String image;
+	private String profileImage;
 
-	@Column(length = 1000)
+	@Column(length = 5000)
 	private String description;
 	
 	@ManyToOne
 	private User user;
-	
-	public User getUser() {
-		return user;
-	}
-
-	public void setUser(User user) {
-		this.user = user;
-	}
 
 	public int getcId() {
 		return cId;
@@ -84,12 +76,12 @@ public class Contact {
 		this.phone = phone;
 	}
 
-	public String getImage() {
-		return image;
+	public String getProfileImage() {
+		return profileImage;
 	}
 
-	public void setImage(String image) {
-		this.image = image;
+	public void setProfileImage(String profileImage) {
+		this.profileImage = profileImage;
 	}
 
 	public String getDescription() {
@@ -100,4 +92,12 @@ public class Contact {
 		this.description = description;
 	}
 
+	public User getUser() {
+		return user;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
+	}
+	
 }
