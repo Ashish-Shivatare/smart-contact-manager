@@ -2,7 +2,6 @@ package com.smart.controller;
 
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -13,9 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.smart.doa.UserRepository;
 import com.smart.entities.User;
 import com.smart.helper.Message;
+import com.smart.service.UserService;
 
 @Controller
 public class HomeController {
@@ -24,7 +23,7 @@ public class HomeController {
 	private BCryptPasswordEncoder passwordEncoder;
 	
 	@Autowired
-	private UserRepository userRepository;
+	private UserService userService;
 	
 	@RequestMapping("/")
 	public String home(Model model) {
@@ -68,7 +67,7 @@ public class HomeController {
 			System.out.println(user);
 			System.out.println(agreed);
 			
-			this.userRepository.save(user);
+			this.userService.save(user);
 			model.addAttribute("user", new User());
 			session.setAttribute("message", new Message("Successfully Registered!!", "alert-success"));
 			return "signup";

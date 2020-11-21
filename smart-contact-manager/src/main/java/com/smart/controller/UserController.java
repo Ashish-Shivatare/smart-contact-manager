@@ -9,7 +9,6 @@ import java.security.Principal;
 import java.util.Optional;
 
 import javax.servlet.http.HttpSession;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
@@ -25,27 +24,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.smart.doa.ContactRepository;
-import com.smart.doa.UserRepository;
 import com.smart.entities.Contact;
 import com.smart.entities.User;
 import com.smart.helper.Message;
+import com.smart.service.ContactService;
+import com.smart.service.UserService;
 
 @Controller
 @RequestMapping("/user")
 public class UserController {
 
 	@Autowired
-	private UserRepository userRepository;
+	private UserService userService;
 	
 	@Autowired
-	private ContactRepository contactRepository;
+	private ContactService contactService;
 
-	//Get user by username
+	//Get user by user name
 	@ModelAttribute
 	public void getUser(Model model, Principal principal) {
 		String username = principal.getName();
-		User user = this.userRepository.getUserByUserName(username);
+		User user = this.userService.getUserByUserName(username);
 		model.addAttribute("user", user);
 	}
 
@@ -70,7 +69,7 @@ public class UserController {
 		try {
 
 			String username = principal.getName();
-			User user = this.userRepository.getUserByUserName(username);
+			User user = this.userService.getUserByUserName(username);
 		
 			//processing and uploading file
 			if(file.isEmpty()) {
@@ -86,7 +85,7 @@ public class UserController {
 			
 			contact.setUser(user);
 			user.getContacts().add(contact);
-			this.userRepository.save(user);
+			this.userService.save(user);
 			session.setAttribute("message", new Message("Contact Added Successfully !!","success"));
 		}
 		catch (Exception e) {
@@ -105,10 +104,10 @@ public class UserController {
 		model.addAttribute("title","Show Contacts");
 
 		String username = principal.getName();
-		User user = this.userRepository.getUserByUserName(username);
+		User user = this.userService.getUserByUserName(username);
 		
 		Pageable pageable = PageRequest.of(page, 5);
-		Page<Contact> contacts = this.contactRepository.findContactsByUser(user.getId(), pageable);
+		Page<Contact> contacts = this.contactService.findContactsByUser(user.getId(), pageable);
 		
 		model.addAttribute("contacts", contacts);
 		model.addAttribute("totalPages", contacts.getTotalPages());
@@ -119,10 +118,10 @@ public class UserController {
 	
 	@GetMapping("/contact/{cId}")
 	public String showContactDetail(@PathVariable("cId") int cId,Model model, Principal principal) {
-		Optional<Contact> contactOptional = this.contactRepository.findById(cId);
+		Optional<Contact> contactOptional = this.contactService.findById(cId);
 		Contact contact = contactOptional.get();
 		String username = principal.getName();
-		User user = this.userRepository.getUserByUserName(username);
+		User user = this.userService.getUserByUserName(username);
 		if(user.getId() == contact.getUser().getId()) {
 			model.addAttribute("title", contact.getName());
 			model.addAttribute("contact", contact);
@@ -133,12 +132,12 @@ public class UserController {
 	@GetMapping("/contact/delete/{cId}")
 	public String deleteContact(@PathVariable("cId") int cId, Model model, Principal principal, HttpSession session) {
 		String username = principal.getName();
-		User user = this.userRepository.getUserByUserName(username);
-		Contact contact = this.contactRepository.findById(cId).get();
+		User user = this.userService.getUserByUserName(username);
+		Contact contact = this.contactService.findById(cId).get();
 		
 		if(user.getId() == contact.getUser().getId()) {
 			contact.setUser(null);
-			this.contactRepository.delete(contact);
+			this.contactService.delete(contact);
 			session.setAttribute("message", new Message("Contact Deleted Successfully", "success"));
 		}else {
 			session.setAttribute("message", new Message("You do not have access to delete this contact", "danger"));
@@ -148,7 +147,7 @@ public class UserController {
 	
 	@PostMapping("/contact/update/{cId}")
 	public String updateContact(@PathVariable("cId") int cId, Model model) {
-		Contact contact = this.contactRepository.findById(cId).get();
+		Contact contact = this.contactService.findById(cId).get();
 		model.addAttribute("title", contact.getName());
 		model.addAttribute("contact",contact);
 		return "normal/update_contact";
@@ -157,14 +156,13 @@ public class UserController {
 	@PostMapping("/contact/updateForm")
 	public String updateForm(@ModelAttribute Contact contact, @RequestParam("image") MultipartFile file, Model model,Principal principal, HttpSession session) {
 		try {
-			Contact oldContact = this.contactRepository.findById(contact.getcId()).get();
+			Contact oldContact = this.contactService.findById(contact.getcId()).get();
 			if(!file.isEmpty()) {
 				//delete old photo
 				File deleteFile = new ClassPathResource("static/images").getFile();
 				File f = new File(deleteFile, oldContact.getProfileImage());
 				f.delete();
-				
-				
+								
 				//update new photo
 				File saveFile = new ClassPathResource("static/images").getFile();
 				Path path = Paths.get(saveFile.getAbsolutePath() + File.separator + file.getOriginalFilename());
@@ -174,9 +172,9 @@ public class UserController {
 				contact.setProfileImage(oldContact.getProfileImage());
 			}
 			String username = principal.getName();
-			User user = this.userRepository.getUserByUserName(username);
+			User user = this.userService.getUserByUserName(username);
 			contact.setUser(user);
-			this.contactRepository.save(contact);
+			this.contactService.save(contact);
 			session.setAttribute("message", new Message("Your Contact Updated Successfully", "success"));
 			
 		} catch (Exception e) {

@@ -5,26 +5,25 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-import com.smart.doa.UserRepository;
 import com.smart.entities.User;
+import com.smart.service.UserService;
 
 public class UserDetailsServiceImpl implements UserDetailsService {
 	
 	@Autowired
-	private UserRepository userRepository;
+	private UserService userService;
 	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		//fetching user from database
 		
-		User user = userRepository.getUserByUserName(username);
+		//fetching user from database
+		User user = this.userService.getUserByUserName(username);
 		
 		if(user == null) {
 			throw new UsernameNotFoundException("Could not found user !!");
 		}
 		
-		CustomUserDetails customUserDetails = new CustomUserDetails(user);
-		
+		CustomUserDetails customUserDetails = new CustomUserDetails(user);	
 		return customUserDetails;
 	}
 
