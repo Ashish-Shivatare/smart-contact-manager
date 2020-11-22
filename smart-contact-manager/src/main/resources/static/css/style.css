@@ -5,7 +5,10 @@ body {
 .bg-primary {
 	background: #009688 !important;
 }
-
+.btn.bg-primary.btn-lg:hover{
+	background: white !important;
+	color: black !important;
+}
 .banner {
 	width: 100%;
 	height: 93vh;

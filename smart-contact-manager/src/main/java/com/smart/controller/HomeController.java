@@ -50,7 +50,6 @@ public class HomeController {
 		try {
 			
 			if(!agreed) {
-				System.out.println("You have not agreed the terms and conditions");
 				throw new Exception("You have not agreed the terms and conditions");
 			}
 			
@@ -64,14 +63,12 @@ public class HomeController {
 			user.setImageUrl("default.png");
 			user.setPassword(passwordEncoder.encode(user.getPassword()));
 			
-			System.out.println(user);
-			System.out.println(agreed);
-			
 			this.userService.save(user);
 			model.addAttribute("user", new User());
 			session.setAttribute("message", new Message("Successfully Registered!!", "alert-success"));
 			return "signup";
-		} catch (Exception e) {
+		} 
+		catch (Exception e) {
 			e.printStackTrace();
 			model.addAttribute("user", user);
 			session.setAttribute("message", new Message("Something went wrong!! "+e.getMessage(), "alert-danger"));
