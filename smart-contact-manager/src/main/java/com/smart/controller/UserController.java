@@ -15,6 +15,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.smart.entities.Contact;
+import com.smart.entities.Password;
 import com.smart.entities.User;
 import com.smart.helper.Message;
 import com.smart.service.ContactService;
@@ -37,9 +39,12 @@ public class UserController {
 
 	@Autowired
 	private UserService userService;
-	
+
 	@Autowired
 	private ContactService contactService;
+
+	@Autowired
+	private BCryptPasswordEncoder passwordEncoder;
 
 	//Get user by user name
 	@ModelAttribute
@@ -69,14 +74,14 @@ public class UserController {
 		try {
 			String username = principal.getName();
 			User user = this.userService.getUserByUserName(username); 
-			
+
 			List<Contact> contactList = user.getContacts();
 			int previousId = 0;
 			for (Contact c : contactList) {
 				previousId = c.getcId();
 			}
 			previousId++;
-			
+
 			//processing and uploading file
 			if(file.isEmpty()) {
 				contact.setProfileImage("contact.png");
@@ -85,25 +90,25 @@ public class UserController {
 				contact.setProfileImage("SCMUSER"+ user.getId() + previousId +file.getOriginalFilename());
 				File saveFile = new ClassPathResource("static/images").getFile();
 				Path path = Paths.get(saveFile.getAbsolutePath() + File.separator + "SCMUSER"+ user.getId()+ previousId +file.getOriginalFilename());
-				
+
 				Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
 			}
-			
+
 			contact.setUser(user);
 			user.getContacts().add(contact);
 			this.userService.save(user);
 			session.setAttribute("message", new Message("Contact Added Successfully !!","success"));
-		
+
 		}
 		catch (Exception e) {	
 			session.setAttribute("message", new Message("Something went wrong !! Please try Again !!","danger"));	
 			e.printStackTrace();
 		}
-		
+
 		return "normal/add_contact";
 	}
-	
-	
+
+
 	// per page = 5 [n]
 	// current page = 0 [page]
 	@GetMapping("/show-contacts/{page}")
@@ -112,34 +117,34 @@ public class UserController {
 		User user = this.userService.getUserByUserName(username);		
 		Pageable pageable = PageRequest.of(page, 5);
 		Page<Contact> contacts = this.contactService.findContactsByUser(user.getId(), pageable);
-		
+
 		model.addAttribute("title","Show Contacts");
 		model.addAttribute("contacts", contacts);
 		model.addAttribute("totalPages", contacts.getTotalPages());
 		model.addAttribute("currentPage", page);	
 		return "normal/show_contact";
 	}
-	
+
 	@GetMapping("/contact/{cId}")
 	public String showContactDetail(@PathVariable("cId") int cId,Model model, Principal principal) {		
 		Optional<Contact> contactOptional = this.contactService.findById(cId);
 		Contact contact = contactOptional.get();
 		String username = principal.getName();
 		User user = this.userService.getUserByUserName(username);
-		
+
 		if(user.getId() == contact.getUser().getId()) {
 			model.addAttribute("title", contact.getName());
 			model.addAttribute("contact", contact);
 		}		
 		return "normal/contact_detail";
 	}
-	
+
 	@GetMapping("/contact/delete/{cId}")
 	public String deleteContact(@PathVariable("cId") int cId, Model model, Principal principal, HttpSession session) {
 		String username = principal.getName();
 		User user = this.userService.getUserByUserName(username);
 		Contact contact = this.contactService.findById(cId).get();
-		
+
 		if(user.getId() == contact.getUser().getId()) {			
 			this.contactService.delete(contact);
 			session.setAttribute("message", new Message("Contact Deleted Successfully", "success"));		
@@ -147,10 +152,10 @@ public class UserController {
 		else {	
 			session.setAttribute("message", new Message("You do not have access to delete this contact", "danger"));
 		}
-		
+
 		return "redirect:/user/show-contacts/0";
 	}
-	
+
 	@PostMapping("/contact/update/{cId}")
 	public String updateContact(@PathVariable("cId") int cId, Model model) {
 		Contact contact = this.contactService.findById(cId).get();
@@ -158,7 +163,7 @@ public class UserController {
 		model.addAttribute("contact",contact);		
 		return "normal/update_contact";
 	}
-	
+
 	@PostMapping("/contact/updateForm")
 	public String updateForm(@ModelAttribute Contact contact, @RequestParam("image") MultipartFile file, Model model,Principal principal, HttpSession session) {
 		try {
@@ -168,7 +173,7 @@ public class UserController {
 				File deleteFile = new ClassPathResource("static/images").getFile();
 				File f = new File(deleteFile, oldContact.getProfileImage());
 				f.delete();
-				
+
 				//update new photo
 				File saveFile = new ClassPathResource("static/images").getFile();
 				Path path = Paths.get(saveFile.getAbsolutePath() + File.separator + "SCMUSER" + oldContact.getUser().getId() + contact.getcId()+ file.getOriginalFilename());
@@ -178,7 +183,7 @@ public class UserController {
 			else {
 				contact.setProfileImage(oldContact.getProfileImage());
 			}
-			
+
 			String username = principal.getName();
 			User user = this.userService.getUserByUserName(username);
 			contact.setUser(user);
@@ -188,13 +193,45 @@ public class UserController {
 		catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		return "redirect:/user/contact/"+contact.getcId();
 	}
-	
+
 	@GetMapping("/profile")
 	public String yourProfile(Model model) {
 		model.addAttribute("title", "User Profile");		
 		return "normal/your_profile";
+	}
+
+	@GetMapping("/settings")
+	public String userSettings(Model model) {
+		model.addAttribute("title", "User Settings");		
+		return "normal/user_settings";
+	}
+
+	@PostMapping("/change-password-form")
+	public String chnagePassword(@ModelAttribute Password password, Model model, Principal principal, HttpSession session) {
+		String username = principal.getName();
+		User user = this.userService.getUserByUserName(username);
+
+
+		if(password.getNewPassword().equals(password.getConfirmPassword())) {
+
+			if(passwordEncoder.matches(password.getOldPassword(), user.getPassword())) {
+				session.setAttribute("message", new Message("Password Change Successfully !!", "success"));
+				user.setPassword(passwordEncoder.encode(password.getNewPassword()));
+				this.userService.save(user);
+				return "normal/user_dashboard";
+			}
+			else {
+				session.setAttribute("message", new Message("Invalid User Password!! Please try again!!", "danger"));
+			}
+		}
+		else {
+			session.setAttribute("message", new Message("Please Enter Same Password !! Password Does Not Match !!", "danger"));
+		}
+		
+		System.out.println(password);
+		return "normal/user_settings";
 	}
 }
